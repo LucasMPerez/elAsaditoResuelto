@@ -1,21 +1,17 @@
+import wollok.game.*
+
 // objetos candidatos 
 // Persona 
 // Elementos
 // Posicion
-class Posicion {
-
-	const property x
-	const property y
-
-}
-
 class Persona {
 
-	var property posicion = new Posicion(x = 0, y = 0)
+	var property posicion = new Position(x = 0, y = 0)
 	const property elementos = []
-	var property criterioDeCambio
-	var property criterioDeComida
+	var property criterioDeCambio = normal
+	var property criterioDeComida = vegetariano
 	const comidas = []
+	const posicionesOcupadas = [ posicion ]
 
 	method agregarElementos(otrosElementos) {
 		elementos.addAll(otrosElementos)
@@ -40,13 +36,46 @@ class Persona {
 
 	method cambiarPosicion(otraPersona) {
 		const aDondeVoy = otraPersona.posicion()
-		otraPersona.posicion(self.posicion())
-		posicion = aDondeVoy
+		otraPersona.ocuparPosicion(posicion)
+		self.ocuparPosicion(aDondeVoy)
+	}
+
+	method ocuparPosicion(nuevaPosicion) {
+		posicion = nuevaPosicion
+		posicionesOcupadas.add(nuevaPosicion)
 	}
 
 	method comer(comida) {
 		if (criterioDeComida.quiereComer(comida)) comidas.add(comida)
 	}
+
+	method estaPipon() = comidas.any{ comida => comida.esPesada() }
+
+	method laPasaBien() = self.comioAlgo() && self.laPasaBienPersonalmente()
+
+	method comioAlgo() = !comidas.isEmpty()
+
+	method laPasaBienPersonalmente() = true
+
+}
+
+const osky = new Persona()
+
+object moni inherits Persona {
+
+	override method laPasaBienPersonalmente() = posicionesOcupadas.contains(game.at(1, 1))
+
+}
+
+object facu inherits Persona {
+
+	override method laPasaBienPersonalmente() = comidas.any{ comida => comida.esCarne() }
+
+}
+
+object vero inherits Persona {
+
+	override method laPasaBienPersonalmente() = elementos.size() <= 3
 
 }
 
@@ -99,6 +128,8 @@ class Comida {
 
 	method tieneMenosCaloriasQue(tope) = calorias < tope
 
+	method esPesada() = calorias > 500
+
 }
 
 // criterio para comer 
@@ -120,23 +151,26 @@ object dietetico {
 
 //alternado: acepta y rechaza alternativamente cada comida
 class Alternado {
-	var estaDeHumor = false 
-	
+
+	var estaDeHumor = false
+
 	method quiereComer(comida) {
-		estaDeHumor = ! estaDeHumor
+		estaDeHumor = !estaDeHumor
 		return estaDeHumor
 	}
-	
+
 }
 
 //una combinación de condiciones, donde todas deben cumplirse para aceptar la comida
 class Combinacion {
+
 	const criterio = []
-	
+
 	method agregarCriterio(unCriterio) {
 		criterio.add(unCriterio)
 	}
-	
-	method quiereComer(comida) = criterio.all { condicion => condicion.quiereComer(comida)}
-	
+
+	method quiereComer(comida) = criterio.all{ condicion => condicion.quiereComer(comida) }
+
 }
+
